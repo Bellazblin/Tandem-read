@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Tandem</title>
+<script src="/socket.io/socket.io.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FDF6EC;--card:#FFFDF8;--bdr:#1A1A1A;--yel:#FFD93D;--red:#FF6B6B;--blue:#6BC5FF;--grn:#6BCB77;--txt:#1A1A1A;--mut:#888;--r:14px;--sh:4px 4px 0 var(--bdr)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Space Grotesk','Noto Sans SC',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;background-image:radial-gradient(circle,#e8dfd3 1px,transparent 1px);background-size:20px 20px}
+.scr{display:none;min-height:100vh;padding:16px;max-width:600px;margin:0 auto}.scr.on{display:block}
+.card{background:var(--card);border:3px solid var(--bdr);border-radius:var(--r);box-shadow:var(--sh);padding:20px;margin-bottom:16px}
+.btn{display:inline-block;padding:10px 22px;background:var(--yel);color:var(--txt);border:3px solid var(--bdr);border-radius:10px;font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer;box-shadow:3px 3px 0 var(--bdr);transition:all .1s}
+.btn:active{box-shadow:1px 1px 0 var(--bdr);transform:translate(2px,2px)}
+.btn-s{padding:6px 14px;font-size:.72rem;box-shadow:2px 2px 0 var(--bdr)}
+.btn-g{display:inline-block;padding:7px 16px;background:0;color:var(--txt);border:2px solid var(--bdr);border-radius:8px;font-family:inherit;font-weight:600;font-size:.75rem;cursor:pointer;transition:all .15s}
+.btn-g:hover{background:var(--bdr);color:var(--card)}
+.btn-red{background:var(--red)}.btn-blue{background:var(--blue)}
+.inp{padding:10px 14px;border:3px solid var(--bdr);border-radius:10px;font-family:inherit;font-size:1rem;font-weight:500;background:var(--card);outline:none;width:100%}
+.inp:focus{box-shadow:0 0 0 3px var(--yel)}
+.tag{display:inline-block;padding:3px 9px;border-radius:20px;font-size:.62rem;font-weight:700;border:2px solid var(--bdr)}
+.tag-a1{background:#D4EDDA}.tag-a2{background:#CCE5FF}.tag-b1{background:#FFF3CD}.tag-b2{background:#F8D7DA}.tag-l{background:var(--yel)}
+h1{font-size:1.8rem;font-weight:700}h2{font-size:1.15rem;font-weight:700}h3{font-size:.92rem;font-weight:700}
+.sub{color:var(--mut);font-size:.75rem;font-weight:500}
+.nav{display:flex;background:var(--card);border:3px solid var(--bdr);border-radius:30px;box-shadow:var(--sh);padding:4px;margin-bottom:16px}
+.nav-i{flex:1;text-align:center;padding:9px;border-radius:26px;font-weight:700;font-size:.75rem;cursor:pointer;transition:all .2s}.nav-i.on{background:var(--yel)}
+.badge{display:inline-flex;align-items:center;gap:4px;background:var(--yel);border:2px solid var(--bdr);border-radius:20px;padding:3px 10px;font-size:.65rem;font-weight:700}
+.av{width:40px;height:40px;border-radius:50%;border:3px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.95rem;flex-shrink:0}
+.av-1{background:var(--red);color:#fff}.av-2{background:var(--blue);color:#fff}
+.rdot{width:12px;height:12px;border-radius:50%;border:2px solid var(--bdr);display:inline-block}.rdot.on{background:var(--grn)}
+.divider{height:2px;background:var(--bdr);margin:14px 0;opacity:.08}
+.s-row{padding:12px 0;border-bottom:1px solid rgba(0,0,0,.06)}.s-row:last-child{border-bottom:none}
+.s-num{font-size:.7rem;font-weight:700;color:var(--mut);margin-bottom:2px}
+.s-line{font-size:1rem;line-height:1.9;margin-bottom:2px}
+.s-hide{background:var(--bdr);color:var(--bdr);border-radius:4px;padding:2px 0;user-select:none;font-size:1rem;line-height:1.9}
+.s-sel{cursor:text;user-select:text}
+.mk{background:var(--yel);border-radius:4px;padding:1px 3px;cursor:pointer}
+.bl-inp{border:none;border-bottom:3px solid var(--yel);background:0;font-family:inherit;font-size:inherit;font-weight:600;color:var(--txt);outline:none;padding:0 4px;text-align:center}
+.bl-inp:focus{border-bottom-color:var(--bdr)}
+.lv{font-weight:700;padding:0 3px;border-bottom:3px solid var(--yel)}
+.lv-ok{color:#2d7a3a;border-bottom-color:var(--grn)}.lv-no{color:#c0392b;border-bottom-color:var(--red)}
+.ans-h{color:#2d7a3a;font-size:.83em;margin-left:6px;font-weight:600}
+.upload-z{border:3px dashed var(--bdr);border-radius:var(--r);padding:18px;text-align:center;cursor:pointer;background:rgba(255,217,61,.05);transition:background .2s}
+.upload-z:hover{background:rgba(255,217,61,.15)}
+.guide{background:rgba(0,0,0,.03);border-radius:10px;padding:14px 16px;font-size:.72rem;color:#666;line-height:1.7;margin-top:10px;display:none}
+.guide.show{display:block}
+.guide code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:.68rem}
+.para-block{font-size:1.02rem;line-height:2;padding:12px 0;user-select:text;cursor:text}
+.lb-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+.lb-rk{width:26px;height:26px;border-radius:50%;background:var(--bdr);color:var(--card);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.7rem;flex-shrink:0}
+.lb-rk.g{background:var(--yel);color:var(--txt)}.lb-rk.s{background:#C0C0C0}.lb-rk.b{background:#CD7F32;color:#fff}
+.duel-box{text-align:center;padding:16px}.duel-vs{font-size:1.8rem;font-weight:700;margin:8px 0}
+.duel-score{font-size:2rem;font-weight:700;font-family:monospace}
+.sel-chip{display:inline-block;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600;border:2px solid var(--bdr);margin:3px;cursor:pointer;transition:all .15s}
+.sel-chip.on{background:var(--yel)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}.fi{animation:fadeIn .3s ease}
+</style></head><body>
+
+<!-- ===== PROFILE ===== -->
+<div id="s-prof" class="scr on">
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center">
+<div class="card" style="max-width:400px;width:100%;text-align:center">
+<div style="font-size:2.5rem;margin-bottom:6px">🗣️</div>
+<h1 style="margin-bottom:2px">Tandem</h1>
+<p class="sub" style="margin-bottom:20px">Cooperative & Competitive Language Exchange</p>
+<input class="inp" id="inp-nick" placeholder="Nickname" maxlength="20" style="text-align:center;margin-bottom:14px">
+<div style="text-align:left;margin-bottom:10px">
+<div style="font-weight:700;font-size:.8rem;margin-bottom:6px">🗣 I speak:</div>
+<div id="speaks-chips"></div>
+</div>
+<div style="text-align:left;margin-bottom:16px">
+<div style="font-weight:700;font-size:.8rem;margin-bottom:6px">📖 I'm learning:</div>
+<div id="learns-chips"></div>
+</div>
+<button class="btn" onclick="goProfile()">Let's go!</button>
+</div></div></div>
+
+<!-- ===== LOBBY ===== -->
+<div id="s-lobby" class="scr">
+<div class="nav">
+<div class="nav-i on" onclick="tab('lib')" id="t-lib">📚 Library</div>
+<div class="nav-i" onclick="tab('rooms')" id="t-rooms">🚪 Rooms</div>
+<div class="nav-i" onclick="tab('lb')" id="t-lb">🏆 Board</div>
+</div>
+<div class="card" style="display:flex;align-items:center;gap:10px;padding:12px 14px">
+<div class="av av-1" id="me-av">?</div>
+<div style="flex:1"><div style="font-weight:700;font-size:.85rem" id="me-nm">—</div><div class="sub" id="me-st">—</div></div>
+<div class="badge" id="me-bg">⭐ 0</div>
+</div>
+
+<div id="p-lib">
+<h2 style="margin-bottom:8px">📚 Library</h2>
+<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px" id="flt"></div>
+<div id="lib-el"></div>
+<div class="upload-z" style="margin-top:12px" onclick="document.getElementById('fup').click()" ondragover="event.preventDefault()" ondrop="event.preventDefault();dropF(event)">
+<input type="file" id="fup" accept=".txt,.tsv,.csv" style="display:none" onchange="upF(this)">
+<div style="font-size:1.1rem;margin-bottom:3px">📄</div>
+<div style="font-weight:600;font-size:.8rem" id="up-lbl">Upload your own text</div>
+<div class="sub">Plain sentence pairs</div>
+<div style="margin-top:6px"><span class="btn-g" style="font-size:.65rem" onclick="event.stopPropagation();toggleGuide()">ℹ How to prepare your file</span></div>
+</div>
+<div class="guide" id="guide-el">
+<strong>File format:</strong><br><br>
+<strong>Option A — Tab-separated</strong> (one pair per line):<br>
+<code>Ich trinke Kaffee.⟶我喝咖啡。</code><br>
+<code>Sie wohnt in Berlin.⟶她住在柏林。</code><br><br>
+<strong>Option B — Alternating lines:</strong><br>
+<code>Ich trinke Kaffee.</code><br>
+<code>我喝咖啡。</code><br>
+<code>Sie wohnt in Berlin.</code><br>
+<code>她住在柏林。</code><br><br>
+<strong>Tips:</strong><br>
+• Each sentence needs a translation pair<br>
+• Any two languages work<br>
+• No special markup needed — you mark practice words during reading<br>
+• Lines starting with <code>=====</code> are ignored
+</div>
+</div>
+
+<div id="p-rooms" style="display:none">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><h2>🚪 Rooms</h2><button class="btn btn-s" onclick="loadRooms()">Refresh</button></div>
+<div class="card" id="rooms-el"><div class="sub" style="text-align:center;padding:16px">No open rooms</div></div>
+<div class="divider"></div>
+<h3 style="margin-bottom:6px">Join by code</h3>
+<div style="display:flex;gap:8px"><input class="inp" id="inp-code" placeholder="ABCD" maxlength="4" style="text-align:center;font-size:1.1rem;letter-spacing:.3em;font-weight:700;text-transform:uppercase;flex:1" onkeydown="if(event.key==='Enter')joinCode()"><button class="btn" onclick="joinCode()">Join</button></div>
+<div class="sub" id="j-err" style="color:var(--red);margin-top:4px"></div>
+</div>
+
+<div id="p-lb" style="display:none">
+<h2 style="margin-bottom:10px">🏆 Leaderboard</h2>
+<div class="card" id="lb-el"><div class="sub" style="text-align:center;padding:16px">No data yet</div></div>
+</div>
+</div>
+
+<!-- ===== LANG PICKER MODAL ===== -->
+<div id="s-langpick" class="scr">
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center">
+<div class="card" style="max-width:400px;width:100%;text-align:center">
+<h2 style="margin-bottom:4px">Pick your role</h2>
+<p class="sub" style="margin-bottom:16px">This exercise has two languages. Which are you learning?</p>
+<div id="lang-pick-opts"></div>
+<div class="divider"></div>
+<h3 style="margin-bottom:8px">Mode</h3>
+<div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px">
+<button class="btn btn-s" id="mode-tandem" onclick="pickMode('tandem')" style="background:var(--yel)">🤝 Tandem</button>
+<button class="btn btn-s btn-red" id="mode-duel" onclick="pickMode('duel')">⚔️ Duel</button>
+</div>
+<div class="divider"></div>
+<h3 style="margin-bottom:8px">Reading style</h3>
+<div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px">
+<button class="btn-g" id="rm-lines" onclick="pickRM('lines')" style="background:var(--yel)">📝 Line by Line</button>
+<button class="btn-g" id="rm-para" onclick="pickRM('paragraph')">📖 Full Text</button>
+</div>
+<button class="btn" onclick="confirmCreate()">Create Room</button>
+</div></div></div>
+
+<!-- ===== JOIN LANG PICK ===== -->
+<div id="s-joinpick" class="scr">
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center">
+<div class="card" style="max-width:400px;width:100%;text-align:center">
+<h2 style="margin-bottom:4px">Join Room</h2>
+<p class="sub" style="margin-bottom:16px" id="jp-info">—</p>
+<div id="jp-opts"></div>
+<button class="btn" style="margin-top:16px" onclick="confirmJoin()">Join</button>
+</div></div></div>
+
+<!-- ===== GAME ===== -->
+<div id="s-game" class="scr">
+<div class="card" style="padding:10px 14px">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:7px">
+<div class="av av-1" style="width:32px;height:32px;font-size:.75rem" id="g-a1">?</div>
+<div><div style="font-weight:700;font-size:.75rem" id="g-n1">—</div><div style="display:flex;align-items:center;gap:3px"><div class="rdot" id="g-r1"></div><span class="sub" style="font-size:.65rem" id="g-s1">—</span></div></div>
+</div>
+<div style="text-align:center"><div style="font-weight:700;font-size:.6rem;color:var(--mut)" id="g-code">—</div><div style="font-weight:700;font-size:.78rem" id="g-ph">—</div></div>
+<div style="display:flex;align-items:center;gap:7px;flex-direction:row-reverse">
+<div class="av av-2" style="width:32px;height:32px;font-size:.75rem" id="g-a2">?</div>
+<div style="text-align:right"><div style="font-weight:700;font-size:.75rem" id="g-n2">waiting...</div><div style="display:flex;align-items:center;gap:3px;justify-content:flex-end"><span class="sub" style="font-size:.65rem" id="g-s2">—</span><div class="rdot" id="g-r2"></div></div></div>
+</div>
+</div>
+<div style="display:flex;gap:5px;align-items:center;margin-top:6px;flex-wrap:wrap">
+<span class="tag tag-l" id="g-lang">—</span><span class="tag" id="g-lvl">—</span><span class="sub" id="g-topic" style="margin-left:3px">—</span><span class="sub" style="margin-left:auto" id="g-prog">—</span>
+</div>
+</div>
+<div class="card" id="g-body" style="min-height:180px"></div>
+<div id="g-act" style="text-align:center;margin-top:8px"></div>
+<div style="text-align:center;margin-top:10px"><button class="btn-g" style="font-size:.65rem" onclick="backL()">← Lobby</button></div>
+</div>
+
+<script>
+// ===== STATE =====
+const S=io();
+let LANGS={},FLAGS={};
+let me="",mySpeaks=[],myLearns=[];
+let myP=0,rc="",lib=[],filt="all";
+let sents=[],meta={},phase="",mode="tandem",readMode="lines";
+let myMarks={},allMarks={};
+let aIdx=0,u1V={},u2V={},u1L={},u2L={},rev={};
+let n1="",n2="",r1=false,r2=false,p1Learn="",p2Learn="";
+let pendingExId=null,pendingCustom=null,pickLang="",pickMode_="tandem",pickRM_="lines";
+let pendingJoinCode="",pendingJoinMeta=null;
+let duelScores={1:0,2:0};
+
+// ===== INIT =====
+S.emit("get-langs",d=>{LANGS=d.LANGS;FLAGS=d.FLAGS;renderChips()});
+
+function renderChips(){
+  const keys=Object.keys(LANGS);
+  document.getElementById("speaks-chips").innerHTML=keys.map(k=>`<span class="sel-chip" data-k="${k}" onclick="toggleChip(this,'speaks')">${FLAGS[k]} ${LANGS[k]}</span>`).join('');
+  document.getElementById("learns-chips").innerHTML=keys.map(k=>`<span class="sel-chip" data-k="${k}" onclick="toggleChip(this,'learns')">${FLAGS[k]} ${LANGS[k]}</span>`).join('');
+}
+function toggleChip(el,type){
+  el.classList.toggle('on');
+  const arr=type==='speaks'?mySpeaks:myLearns;
+  const k=el.dataset.k;
+  const i=arr.indexOf(k);
+  if(i>=0)arr.splice(i,1);else arr.push(k);
+}
+
+function goProfile(){
+  me=document.getElementById('inp-nick').value.trim();
+  if(!me)return;
+  if(!mySpeaks.length||!myLearns.length)return alert("Please select at least one language for each");
+  S.emit('set-profile',{nickname:me,speaks:mySpeaks,learning:myLearns},()=>{
+    document.getElementById('me-nm').textContent=me;
+    document.getElementById('me-av').textContent=me[0].toUpperCase();
+    document.getElementById('me-st').textContent=mySpeaks.map(k=>FLAGS[k]).join('')+' → '+myLearns.map(k=>FLAGS[k]).join('');
+    loadLib();show('s-lobby');
+  });
+}
+
+// ===== SCREENS =====
+function show(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on')}
+function tab(t){['lib','rooms','lb'].forEach(x=>{document.getElementById('p-'+x).style.display=x===t?'block':'none';document.getElementById('t-'+x).classList.toggle('on',x===t)});if(t==='rooms')loadRooms();if(t==='lb')loadLB()}
+
+// ===== LIBRARY =====
+function loadLib(){S.emit('get-library',d=>{lib=d;rnLib()})}
+function rnLib(){
+  const el=document.getElementById('lib-el');
+  const fs=document.getElementById('flt');
+  const tags=['all',...new Set(lib.flatMap(e=>[e.lA+'-'+e.lB,e.level]))];
+  fs.innerHTML=tags.map(t=>`<button class="btn-g" style="padding:3px 10px;font-size:.62rem;${filt===t?'background:var(--yel)':''}" onclick="filt='${t}';rnLib()">${t==='all'?'All':t}</button>`).join('');
+  let items=filt==='all'?lib:lib.filter(e=>(e.lA+'-'+e.lB)===filt||e.level===filt);
+  if(!items.length){el.innerHTML='<div class="card"><div class="sub" style="text-align:center;padding:10px">No matches</div></div>';return}
+  el.innerHTML=items.map(e=>`<div class="card fi" style="cursor:pointer" onclick="selectEx('${e.id}')"><div style="display:flex;align-items:center;justify-content:space-between"><h3>${e.topic}</h3><div style="display:flex;gap:4px"><span class="tag tag-l">${FLAGS[e.lA]||''}⇄${FLAGS[e.lB]||''}</span><span class="tag tag-${e.level.toLowerCase()}">${e.level}</span></div></div><div class="sub" style="margin-top:3px">${e.topicB} · ${e.count} sentences</div></div>`).join('')}
+function toggleGuide(){document.getElementById('guide-el').classList.toggle('show')}
+
+// ===== SELECT EXERCISE → LANG PICK =====
+function selectEx(id){pendingExId=id;pendingCustom=null;const ex=lib.find(e=>e.id===id);showLangPick(ex.lA,ex.lB)}
+function showLangPick(lA,lB){
+  pickLang="";pickMode_="tandem";pickRM_="lines";
+  document.getElementById('lang-pick-opts').innerHTML=`
+    <button class="btn btn-s" style="margin:4px" onclick="pickLang='${lA}';this.style.background='var(--yel)';this.nextElementSibling.style.background=''">${FLAGS[lA]||lA} ${LANGS[lA]||lA}</button>
+    <button class="btn btn-s" style="margin:4px" onclick="pickLang='${lB}';this.style.background='var(--yel)';this.previousElementSibling.style.background=''">${FLAGS[lB]||lB} ${LANGS[lB]||lB}</button>`;
+  document.getElementById('mode-tandem').style.background='var(--yel)';
+  document.getElementById('mode-duel').style.background='var(--red)';
+  document.getElementById('rm-lines').style.background='var(--yel)';
+  document.getElementById('rm-para').style.background='';
+  show('s-langpick');
+}
+function pickMode(m){pickMode_=m;document.getElementById('mode-tandem').style.background=m==='tandem'?'var(--yel)':'';document.getElementById('mode-duel').style.background=m==='duel'?'var(--yel)':''}
+function pickRM(m){pickRM_=m;document.getElementById('rm-lines').style.background=m==='lines'?'var(--yel)':'';document.getElementById('rm-para').style.background=m==='paragraph'?'var(--yel)':''}
+function confirmCreate(){
+  if(!pickLang)return alert("Pick which language you're learning");
+  const opts={mode:pickMode_,myLearning:pickLang};
+  if(pendingExId)opts.exerciseId=pendingExId;
+  else if(pendingCustom)opts.customSentences=pendingCustom;
+  S.emit('create-room',opts,res=>{
+    if(res.error)return alert(res.error);
+    myP=res.player;rc=res.code;sents=res.sents;meta=res.meta;phase=res.phase;mode=res.mode;readMode=pickRM_;
+    n1=me;n2="";r1=r2=false;p1Learn=pickLang;p2Learn="";
+    myMarks={};allMarks={};aIdx=0;u1V={};u2V={};u1L={};u2L={};rev={};duelScores={1:0,2:0};
+    S.emit('set-read-mode',readMode);
+    enterGame();
+  });
+}
+
+// FILE UPLOAD
+function upF(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{const p=parseF(e.target.result);if(p.length>0){pendingExId=null;pendingCustom=p;showLangPick('??','??')}};r.readAsText(f)}
+function dropF(e){const f=e.dataTransfer.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const p=parseF(ev.target.result);if(p.length>0){pendingExId=null;pendingCustom=p;showLangPick('??','??')}};r.readAsText(f)}
+function parseF(t){const ls=t.split('\n').map(l=>l.trim()).filter(l=>l&&!l.startsWith('====='));const ps=[];if(ls[0]?.includes('\t'))for(const l of ls){const p=l.split('\t');if(p.length>=2)ps.push([p[0].trim(),p[1].trim()])}else for(let i=0;i+1<ls.length;i+=2)ps.push([ls[i],ls[i+1]]);return ps}
+
+// ===== ROOMS =====
+function loadRooms(){S.emit('get-rooms',list=>{const el=document.getElementById('rooms-el');if(!list.length){el.innerHTML='<div class="sub" style="text-align:center;padding:16px">No open rooms</div>';return}el.innerHTML=list.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.05)"><div><div style="font-weight:700;font-size:.82rem">${esc(r.creator)}'s room <span class="tag tag-l" style="font-size:.55rem">${r.mode==='duel'?'⚔️':'🤝'}</span></div><div style="display:flex;gap:3px;margin-top:3px"><span class="tag tag-l" style="font-size:.55rem">${FLAGS[r.lA]||''}⇄${FLAGS[r.lB]||''}</span><span class="tag tag-${(r.level||'').toLowerCase()}" style="font-size:.55rem">${r.level}</span><span class="sub" style="font-size:.6rem">${esc(r.topic)}</span></div></div><button class="btn btn-s" onclick="preJoin('${r.code}')">Join</button></div>`).join('')})}
+function joinCode(){const c=document.getElementById('inp-code').value.trim().toUpperCase();if(c)preJoin(c)}
+function preJoin(code){
+  pendingJoinCode=code;
+  // Find room info to show lang picker
+  S.emit('get-rooms',list=>{
+    const r=list.find(x=>x.code===code);
+    if(r){
+      pickLang="";
+      document.getElementById('jp-info').textContent=`${r.creator}'s room · ${r.topic} · ${FLAGS[r.lA]||r.lA}⇄${FLAGS[r.lB]||r.lB}`;
+      document.getElementById('jp-opts').innerHTML=`
+        <button class="btn btn-s" style="margin:4px" onclick="pickLang='${r.lA}';this.style.background='var(--yel)';this.nextElementSibling.style.background=''">${FLAGS[r.lA]||r.lA} ${LANGS[r.lA]||r.lA}</button>
+        <button class="btn btn-s" style="margin:4px" onclick="pickLang='${r.lB}';this.style.background='var(--yel)';this.previousElementSibling.style.background=''">${FLAGS[r.lB]||r.lB} ${LANGS[r.lB]||r.lB}</button>`;
+      show('s-joinpick');
+    } else {
+      // Direct join attempt
+      pickLang="";
+      S.emit('join-room',code,{myLearning:""},onJoin);
+    }
+  });
+}
+function confirmJoin(){
+  if(!pickLang)return alert("Pick which language you're learning");
+  S.emit('join-room',pendingJoinCode,{myLearning:pickLang},onJoin);
+}
+function onJoin(res){
+  if(res.error){document.getElementById('j-err').textContent=res.error;show('s-lobby');return}
+  myP=res.player;rc=res.code;sents=res.sents;meta=res.meta;phase=res.phase;mode=res.mode;readMode=res.readMode||'lines';
+  n2=me;r1=r2=false;p2Learn=pickLang;
+  myMarks={};allMarks={};aIdx=0;u1V={};u2V={};u1L={};u2L={};rev={};duelScores={1:0,2:0};
+  enterGame();
+}
+
+// ===== LEADERBOARD =====
+function loadLB(){S.emit('get-leaderboard',b=>{const el=document.getElementById('lb-el');if(!b.length){el.innerHTML='<div class="sub" style="text-align:center;padding:16px">Complete a session!</div>';return}el.innerHTML=b.map((u,i)=>`<div class="lb-row"><div class="lb-rk ${i===0?'g':i===1?'s':i===2?'b':''}">${i+1}</div><div style="flex:1"><div style="font-weight:700;font-size:.82rem">${esc(u.name)}</div><div class="sub">${u.sessions} sessions · ${u.duelWins||0}W</div></div><div class="badge">⭐ ${u.total}</div></div>`).join('')})}
+
+// ===== GAME =====
+function enterGame(){show('s-game');updH();render();updAct()}
+function updH(){
+  document.getElementById('g-code').textContent='Room '+rc;
+  document.getElementById('g-a1').textContent=(n1||'?')[0].toUpperCase();
+  document.getElementById('g-n1').textContent=n1||'waiting...';
+  document.getElementById('g-a2').textContent=(n2||'?')[0].toUpperCase();
+  document.getElementById('g-n2').textContent=n2||'waiting...';
+  document.getElementById('g-lang').textContent=(FLAGS[meta.lA]||'')+'⇄'+(FLAGS[meta.lB]||'');
+  document.getElementById('g-lvl').textContent=meta.level||'';
+  document.getElementById('g-lvl').className='tag tag-'+(meta.level||'').toLowerCase();
+  document.getElementById('g-topic').textContent=(meta.topic||'')+' · '+(meta.topicB||'');
+  const ph=phase==='duel'?'⚔️ Duel':phase==='practice'?'✏️ Practice':'📖 Reading';
+  document.getElementById('g-ph').textContent=ph;
+  document.getElementById('g-r1').className='rdot'+(r1?' on':'');
+  document.getElementById('g-r2').className='rdot'+(r2?' on':'');
+  document.getElementById('g-s1').textContent=r1?'ready':'reading';
+  document.getElementById('g-s2').textContent=n2?(r2?'ready':'reading'):'—';
+  document.getElementById('g-prog').textContent=(phase==='practice'||phase==='duel')?((aIdx+1)+'/'+sents.length):(sents.length+' sent.');
+}
+
+function render(){
+  const el=document.getElementById('g-body');
+  if(phase==='reading'){
+    if(readMode==='paragraph')renderPara(el);
+    else renderRead(el);
+  }else if(phase==='duel')renderDuel(el);
+  else renderPractice(el);
+}
+
+// ===== READING: LINE BY LINE =====
+function renderRead(el){
+  const myLearn=myP===1?p1Learn:p2Learn;
+  const myIdx=myLearn===meta.lA?0:1;
+  const myLK=myIdx===0?'a':'b';
+  let h='';
+  sents.forEach((p,i)=>{
+    h+=`<div class="s-row fi"><div class="s-num">${i+1}.</div>`;
+    h+=`<div class="s-hide">${esc(p[1-myIdx])}</div>`;
+    const marks=myMarks[i+'-'+myLK]||[];
+    h+=`<div class="s-line s-sel" id="st-${i}" onmouseup="onSel(${i},'${myLK}',${myIdx})">${mkText(p[myIdx],marks,i,myLK)}</div>`;
+    h+=`</div>`;
+  });
+  el.innerHTML=h;
+}
+
+// ===== READING: PARAGRAPH =====
+function renderPara(el){
+  const myLearn=myP===1?p1Learn:p2Learn;
+  const myIdx=myLearn===meta.lA?0:1;
+  const myLK=myIdx===0?'a':'b';
+  // Hidden paragraph
+  let hid='<div class="s-hide" style="margin-bottom:12px">';
+  sents.forEach(p=>{hid+=esc(p[1-myIdx])+' '});
+  hid+='</div>';
+  // Visible paragraph with sentence spans
+  let vis='<div class="para-block">';
+  sents.forEach((p,i)=>{
+    const marks=myMarks[i+'-'+myLK]||[];
+    vis+=`<span id="st-${i}" onmouseup="onSel(${i},'${myLK}',${myIdx})" style="cursor:text">${mkText(p[myIdx],marks,i,myLK)}</span> `;
+  });
+  vis+='</div>';
+  el.innerHTML=hid+vis;
+}
+
+function mkText(text,marks,si,lk){
+  if(!marks||!marks.length)return esc(text);
+  const sorted=[...marks].sort((a,b)=>a.s-b.s);
+  let r='',p=0;
+  sorted.forEach(m=>{
+    if(m.s>p)r+=esc(text.substring(p,m.s));
+    r+=`<span class="mk" onclick="event.stopPropagation();rmMk(${si},'${lk}',${m.s},${m.e})">${esc(text.substring(m.s,m.e))}</span>`;
+    p=m.e;
+  });
+  if(p<text.length)r+=esc(text.substring(p));
+  return r;
+}
+
+function onSel(si,lk,myIdx){
+  const sel=window.getSelection();if(!sel||sel.isCollapsed)return;
+  const text=sents[si][myIdx];
+  const cont=document.getElementById('st-'+si);
+  if(!cont)return;
+  const range=sel.getRangeAt(0);
+  if(!cont.contains(range.startContainer)||!cont.contains(range.endContainer)){sel.removeAllRanges();return}
+  const st=sel.toString().trim();if(!st){sel.removeAllRanges();return}
+  const idx=text.indexOf(st);if(idx===-1){sel.removeAllRanges();return}
+  const start=idx,end=idx+st.length;
+  const key=si+'-'+lk;
+  if(!myMarks[key])myMarks[key]=[];
+  if(myMarks[key].find(m=>!(end<=m.s||start>=m.e))){sel.removeAllRanges();return}
+  myMarks[key].push({s:start,e:end});
+  S.emit('mark-word',{sentenceIdx:si,lang:lk,start,end});
+  sel.removeAllRanges();render();
+}
+
+function rmMk(si,lk,s,e){
+  const key=si+'-'+lk;
+  if(myMarks[key])myMarks[key]=myMarks[key].filter(m=>!(m.s===s&&m.e===e));
+  S.emit('unmark-word',{sentenceIdx:si,lang:lk,start:s,end:e});
+  render();
+}
+
+// ===== PRACTICE (TANDEM) =====
+function renderPractice(el){
+  let h='';
+  sents.forEach((pair,i)=>{
+    const isAct=i===aIdx,isPast=i<aIdx;
+    const p1Has=hasBlanks(i,1),p2Has=hasBlanks(i,2);
+    const p1Lk=!!u1L[i]||!p1Has,p2Lk=!!u2L[i]||!p2Has;
+    const bothDone=p1Lk&&p2Lk;
+    const isRev=!!rev[i],isLast=i===sents.length-1;
+    h+=`<div class="s-row" style="opacity:${isAct?1:isPast?.35:.25};pointer-events:${isAct?'auto':'none'}" ${isAct?'id="act-row"':''}>`;
+    h+=`<div class="s-num">${i+1}.</div>`;
+    // Line A (idx 0): filled by whoever is learning lA
+    h+=pracLine(pair[0],i,'a',whoFillsLang('a'),isAct,isRev);
+    // Line B (idx 1): filled by whoever is learning lB
+    h+=pracLine(pair[1],i,'b',whoFillsLang('b'),isAct,isRev);
+    if(isAct&&bothDone&&!isRev)h+=`<div class="fi" style="margin-top:8px"><button class="btn btn-s" onclick="doReveal(${i})">Reveal</button></div>`;
+    if(isAct&&isRev&&!isLast)h+=`<div class="fi" style="margin-top:8px"><button class="btn btn-s" onclick="doNext()">Next →</button></div>`;
+    if(isAct&&isRev&&isLast)h+=`<div class="fi" style="margin-top:8px"><div class="sub" style="margin-bottom:6px">Session complete!</div><button class="btn btn-s" onclick="doRestart()">Again</button></div>`;
+    h+=`</div>`;
+  });
+  el.innerHTML=h;
+  focusMyBlank();
+  const act=document.getElementById('act-row');if(act)act.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function whoFillsLang(lk){
+  // lk='a' means langA. Who is learning langA?
+  const targetLang=lk==='a'?meta.lA:meta.lB;
+  if(p1Learn===targetLang)return 1;
+  if(p2Learn===targetLang)return 2;
+  return lk==='a'?2:1; // fallback
+}
+
+function hasBlanks(si,player){
+  const lk=player===1?(p1Learn===meta.lA?'a':'b'):(p2Learn===meta.lA?'a':'b');
+  const marks=allMarks[player]?.[si+'-'+lk];
+  return marks&&marks.length>0;
+}
+
+function pracLine(text,si,lk,who,isAct,isRev){
+  const marks=allMarks[who]?.[si+'-'+lk]||[];
+  if(!marks.length)return`<div class="s-line">${esc(text)}</div>`;
+  const sorted=[...marks].sort((a,b)=>a.s-b.s);
+  const vals=who===1?u1V:u2V;
+  const locked=who===1?!!u1L[si]:!!u2L[si];
+  const isMe=who===myP;
+  const vArr=vals[si]||[];
+  let h='<div class="s-line">';let p=0;
+  sorted.forEach((m,bi)=>{
+    if(m.s>p)h+=esc(text.substring(p,m.s));
+    const answer=text.substring(m.s,m.e);
+    const val=vArr[bi]||'';
+    if(locked){
+      if(isRev){
+        const ok=val.trim().toLowerCase()===answer.toLowerCase();
+        h+=`<span class="lv ${ok?'lv-ok':'lv-no'}">${esc(val||'—')}</span>`;
+        if(!ok)h+=`<span class="ans-h">(${esc(answer)})</span>`;
+      }else{
+        h+=`<span class="lv">${esc(val||'—')}</span>`;
+      }
+    }else if(isAct&&isMe){
+      h+=`<input class="bl-inp" data-si="${si}" data-bi="${bi}" data-who="${who}" data-lk="${lk}" value="${esc(val)}" style="width:${Math.max(36,answer.length*13+10)}px" oninput="onBI(this)" onkeydown="onBK(event,this)">`;
+    }else if(isAct){
+      h+=`<span style="display:inline-block;width:${Math.max(36,answer.length*13+10)}px;border-bottom:3px solid ${who===1?'var(--red)':'var(--blue)'};height:1.2em">&nbsp;</span>`;
+    }else h+='______';
+    p=m.e;
+  });
+  if(p<text.length)h+=esc(text.substring(p));
+  h+='</div>';return h;
+}
+
+function onBI(inp){
+  const si=+inp.dataset.si,bi=+inp.dataset.bi,who=+inp.dataset.who;
+  const v=who===1?u1V:u2V;
+  if(!v[si])v[si]=[];
+  v[si][bi]=inp.value;
+}
+
+function onBK(e,inp){
+  if(e.key==='Tab'){
+    e.preventDefault();
+    // Move to next blank in same sentence
+    const si=inp.dataset.si,bi=+inp.dataset.bi;
+    const next=document.querySelector(`[data-si="${si}"][data-bi="${bi+1}"]`);
+    if(next)next.focus();
+    return;
+  }
+  if(e.key==='Enter'){
+    const si=+inp.dataset.si,who=+inp.dataset.who;
+    // Collect all blank values for this sentence
+    const blanks=document.querySelectorAll(`[data-si="${si}"][data-who="${who}"]`);
+    const values=[];
+    blanks.forEach(b=>{values[+b.dataset.bi]=b.value.trim()});
+    if(values.some(v=>!v))return; // all must be filled
+    if(who===1){u1V[si]=values;u1L[si]=true}else{u2V[si]=values;u2L[si]=true}
+    S.emit('lock',{idx:si,values});
+    render();updH();
+  }
+}
+
+function focusMyBlank(){
+  const myLK=myP===1?(p1Learn===meta.lA?'a':'b'):(p2Learn===meta.lA?'a':'b');
+  const inp=document.querySelector(`[data-si="${aIdx}"][data-who="${myP}"][data-bi="0"]`);
+  if(inp&&!isMyLk(aIdx))setTimeout(()=>inp.focus(),100);
+}
+function isMyLk(i){return myP===1?!!u1L[i]:!!u2L[i]}
+
+// ===== DUEL =====
+function renderDuel(el){
+  const si=aIdx;
+  const pair=sents[si];
+  const myLearn=myP===1?p1Learn:p2Learn;
+  const srcIdx=myLearn===meta.lA?1:0; // show the OTHER language as source
+  const srcText=pair[srcIdx];
+  const isLast=si===sents.length-1;
+  let h=`<div class="duel-box fi">`;
+  h+=`<div class="sub">Translate into ${FLAGS[myLearn]||''} ${LANGS[myLearn]||myLearn}</div>`;
+  h+=`<div style="font-size:1.15rem;font-weight:600;margin:12px 0;padding:16px;background:rgba(0,0,0,.03);border-radius:10px">${esc(srcText)}</div>`;
+  h+=`<div id="duel-timer" style="font-size:.75rem;color:var(--mut);margin-bottom:8px">⏱ 45s</div>`;
+  h+=`<textarea id="duel-inp" class="inp" style="height:60px;resize:none;margin-bottom:10px" placeholder="Type your translation..."></textarea>`;
+  h+=`<button class="btn" onclick="duelSubmit()">Submit</button>`;
+  h+=`<div style="display:flex;justify-content:center;gap:24px;margin-top:16px">`;
+  h+=`<div style="text-align:center"><div class="sub">${esc(n1||'P1')}</div><div class="duel-score" style="color:var(--red)">${duelScores[1]}</div></div>`;
+  h+=`<div style="font-size:1.5rem;font-weight:700;color:var(--mut);display:flex;align-items:center">VS</div>`;
+  h+=`<div style="text-align:center"><div class="sub">${esc(n2||'P2')}</div><div class="duel-score" style="color:var(--blue)">${duelScores[2]}</div></div>`;
+  h+=`</div></div>`;
+  el.innerHTML=h;
+  // Timer
+  let sec=45;
+  const tid=setInterval(()=>{sec--;const te=document.getElementById('duel-timer');if(te)te.textContent='⏱ '+sec+'s';if(sec<=0){clearInterval(tid);duelSubmit()}},1000);
+  window._duelTimer=tid;
+}
+
+function duelSubmit(){
+  clearInterval(window._duelTimer);
+  const inp=document.getElementById('duel-inp');
+  const val=inp?inp.value.trim():'';
+  inp&&(inp.disabled=true);
+  S.emit('duel-submit',{idx:aIdx,answer:val});
+}
+
+function doReveal(i){S.emit('reveal',{idx:i})}
+function doNext(){S.emit('next')}
+function doRestart(){S.emit('restart')}
+function backL(){show('s-lobby');loadLib()}
+
+function updAct(){
+  const el=document.getElementById('g-act');
+  if(phase==='reading'){
+    const iR=myP===1?r1:r2;
+    const both=r1&&r2&&n2;
+    el.innerHTML=`${!iR?`<button class="btn" onclick="setReady()">✓ I'm Ready</button>`:`<span class="badge" style="font-size:.78rem">✓ Ready</span>`}${both?`<br><button class="btn" style="margin-top:8px" onclick="startPrac()">🚀 Start!</button>`:''}`;
+  }else el.innerHTML='';
+}
+function setReady(){S.emit('set-ready');if(myP===1)r1=true;else r2=true;updAct();updH()}
+function startPrac(){S.emit('start-practice')}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// ===== SOCKET EVENTS =====
+S.on('player-joined',d=>{n1=d.p1||n1;n2=d.p2||n2;p1Learn=d.p1Learning||p1Learn;p2Learn=d.p2Learning||p2Learn;updH();updAct()});
+S.on('player-left',d=>{if(d.player===1)n1='';else n2='';updH()});
+S.on('read-mode-changed',m=>{readMode=m;render()});
+S.on('word-marked',d=>{if(d.player!==myP){const k=d.sentenceIdx+'-'+d.lang;if(!allMarks[d.player])allMarks[d.player]={};if(!allMarks[d.player][k])allMarks[d.player][k]=[];allMarks[d.player][k].push({s:d.start,e:d.end})}});
+S.on('word-unmarked',d=>{if(d.player!==myP){const k=d.sentenceIdx+'-'+d.lang;if(allMarks[d.player]?.[k])allMarks[d.player][k]=allMarks[d.player][k].filter(m=>!(m.s===d.start&&m.e===d.end))}});
+S.on('player-ready',d=>{r1=d.p1Ready;r2=d.p2Ready;updH();updAct()});
+S.on('practice-started',d=>{
+  phase=d.mode==='duel'?'duel':'practice';
+  sents=d.sents;aIdx=d.activeIdx;
+  u1V={};u2V={};u1L={};u2L={};rev={};duelScores={1:0,2:0};
+  // Merge my marks into allMarks
+  allMarks=d.marks||{};
+  // Add my own marks to allMarks under my player number
+  if(!allMarks[myP])allMarks[myP]={};
+  Object.keys(myMarks).forEach(k=>{allMarks[myP][k]=myMarks[k]});
+  updH();render();updAct();
+});
+S.on('player-locked',d=>{u1L=d.u1Locked;u2L=d.u2Locked;u1V=d.u1Vals;u2V=d.u2Vals;render()});
+S.on('revealed',d=>{rev=d.revealed;render()});
+S.on('advance',d=>{aIdx=d.activeIdx;updH();render();if(phase==='duel')render()});
+S.on('duel-result',d=>{
+  duelScores=d.totalScores;
+  clearInterval(window._duelTimer);
+  const el=document.getElementById('g-body');
+  const isLast=aIdx>=sents.length-1;
+  let h=`<div class="duel-box fi">`;
+  h+=`<div class="sub" style="margin-bottom:8px">Results</div>`;
+  h+=`<div style="display:flex;gap:16px;justify-content:center;margin-bottom:12px">`;
+  h+=`<div class="card" style="flex:1;text-align:center;padding:12px;box-shadow:2px 2px 0 var(--bdr)"><div class="sub">${esc(n1)}</div><div style="font-size:.9rem;margin:6px 0">${esc(d.answers[1]||'(empty)')}</div><div style="font-weight:700;color:var(--red)">+${d.scores[1].score}</div></div>`;
+  h+=`<div class="card" style="flex:1;text-align:center;padding:12px;box-shadow:2px 2px 0 var(--bdr)"><div class="sub">${esc(n2)}</div><div style="font-size:.9rem;margin:6px 0">${esc(d.answers[2]||'(empty)')}</div><div style="font-weight:700;color:var(--blue)">+${d.scores[2].score}</div></div>`;
+  h+=`</div>`;
+  h+=`<div style="background:rgba(0,0,0,.03);border-radius:8px;padding:10px;margin-bottom:12px"><div class="sub">Reference</div><div style="font-weight:600;margin-top:4px">${esc(d.reference)}</div></div>`;
+  h+=`<div style="display:flex;justify-content:center;gap:24px;margin-bottom:12px"><div style="text-align:center"><div class="sub">${esc(n1)}</div><div class="duel-score" style="color:var(--red)">${duelScores[1]}</div></div><div style="font-size:1.2rem;font-weight:700;color:var(--mut);display:flex;align-items:center">VS</div><div style="text-align:center"><div class="sub">${esc(n2)}</div><div class="duel-score" style="color:var(--blue)">${duelScores[2]}</div></div></div>`;
+  if(!isLast)h+=`<button class="btn" onclick="doNext()">Next →</button>`;
+  else h+=`<div class="sub" style="margin-bottom:6px">${duelScores[1]>duelScores[2]?n1+' wins! 🎉':duelScores[2]>duelScores[1]?n2+' wins! 🎉':'Tie!'}</div><button class="btn btn-s" onclick="doRestart()">Again</button>`;
+  h+=`</div>`;
+  el.innerHTML=h;
+});
+S.on('duel-waiting',d=>{
+  // Show "waiting for opponent" if I already submitted
+});
+S.on('restarted',d=>{
+  phase='reading';sents=d.sents;meta=d.meta;
+  aIdx=0;myMarks={};allMarks={};r1=r2=false;
+  u1V={};u2V={};u1L={};u2L={};rev={};duelScores={1:0,2:0};
+  updH();render();updAct();
+});
+</script>
+</body></html>
